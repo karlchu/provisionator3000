@@ -25,10 +25,6 @@ UNKNOWN_MACHINE_ROLE = 'unknown role'
 UNKNOWN_ENVRONMENT = 'unknown env'
 FAKE_MODE = os.getenv('FAKE_MODE') == 'true' or False
 
-# Set up GPIO
-GPIO.setmode(GPIO.BOARD)
-GPIO.setup(button_pin, GPIO.IN)
-
 class FakeLCD:
     def clear(self):
         return None
@@ -63,6 +59,10 @@ else:
   # LCD configuration
   lcd = Adafruit_CharLCD()
   lcd.begin(16,1)
+
+# Set up GPIO
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(button_pin, GPIO.IN)
 
 # API machine roles that can be provisioned.
 MACHINE_ROLES = list(reversed([ 'infra_bare',
@@ -153,22 +153,22 @@ def GetRandomMachineName():
 def DoStuff():
     machine_name = GetRandomMachineName()
     request_body = json.dumps({"machine_role":selected_machine_role(), "environment":selected_environment()})
-    definition_url = "http://provisioner-dev.hq.local:8080/v1/node/" + machine_name + "/definition"
-    instance_url = "http://provisioner-dev.hq.local:8080/v1/node/" + machine_name + "/instance"
+    definition_url = "http://provisioner.hq.local:8080/v1/node/" + machine_name + "/definition"
+    instance_url = "http://provisioner.hq.local:8080/v1/node/" + machine_name + "/instance"
 
     print("Creating definition: " + definition_url)
     print("Request Body: " + request_body)
     definition_response = requests.put(definition_url, request_body)
     if (definition_response.status_code != 201):
-        print("Could not create definition: {}".format(definition_response.text))
-        exit
+        message = "Could not create definition: {}".format(definition_response.text)
+        raise Exception(message)
     print("Definition created.")
 
     print("Provisioning instance: ")
     instance_response = requests.put(instance_url, '')
     if instance_response.status_code != 202:
-        print "Could not provision instance."
-        exit
+        message = "Could not provision instance."
+        raise Exception(message)
 
     print("Provisioning instance...")
     instance_status = "provision_pending"
@@ -186,6 +186,19 @@ try:
     print 'FAKE_MODE = ' + str(FAKE_MODE)
     
     while True:
+        button_state = WaitForButtonStateChange()
+        if (button_state == 0):
+            DoStuff()
+
+except Exception as ex:
+    print ex.message
+        
+finally:
+    if FAKE_MODE:
+        spi.close()
+
+print 'Done.'
+
 ##        print "-------------------------------------------"
 ##        machine_role = selected_machine_role()
 ##        environment = selected_environment()
@@ -194,14 +207,3 @@ try:
 ##        lcd.message("R: %s" % machine_role)
 ##        print "-------------------------------------------"
 ##        time.sleep(2)
-
-     button_state = WaitForButtonStateChange()
-        if (button_state == 0):
-            DoStuff()
-
-        
-finally:
-    if FAKE_MODE:
-        spi.close()
-
-print 'Done.'

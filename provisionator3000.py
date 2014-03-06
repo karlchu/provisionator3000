@@ -11,7 +11,6 @@ import string
 import sys
 import time
 
-vref = 5.0
 
 # Define sensor channels
 machine_role_channel = 0

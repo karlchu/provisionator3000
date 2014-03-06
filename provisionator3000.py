@@ -124,31 +124,7 @@ def DoStuff():
 ##        
 ##    print("Instance provisioned for {}.".format(machine_name))
 
-def GetPositionFromLevel(level, position_threshold_array):
-    for i in range(0, len(position_threshold_array)):
-        if (level < position_threshold_array[i]):
-            return i
-
 while True:
     button_state = WaitForButtonStateChange()
     if (button_state == 0):
         DoStuff()
-
-##while True:
-##
-##    # Read the light sensor data
-##    light_level = ReadChannel(light_channel)
-##    light_volts = ConvertVolts(light_level,2)
-##
-##    # Read the temperature sensor data
-##    temp_level = ReadChannel(temp_channel)
-##    temp_volts = ConvertVolts(temp_level,2)
-##
-##    # Print out results
-##    print "--------------------------------------------"
-##    #print("Light: {} ({}V)".format(light_level,light_volts))
-##    #print("Temp : {} ({}V)".format(temp_level,temp_volts))
-##    print("Value: {}/1023 ({}V)".format(temp_level,temp_volts))
-##
-##    # Wait before repeating loop
-##    time.sleep(delay)

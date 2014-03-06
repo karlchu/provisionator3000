@@ -20,10 +20,13 @@ ADC_VREF = 3.3
 ADC_NUM_LEVELS = 1024
 MACHINE_ROLE_CHANNEL = 0
 ENVIRONMENT_CHANNEL = 1
-button_pin = 18
+button_pin = 7
 UNKNOWN_MACHINE_ROLE = 'unknown role'
 UNKNOWN_ENVRONMENT = 'unknown env'
 FAKE_MODE = os.getenv('FAKE_MODE') == 'true' or False
+
+prev_machine_role = ''
+prev_environment = ''
 
 class FakeLCD:
     def clear(self):
@@ -100,7 +103,7 @@ def read_adc_level(channel):
         r = spi.xfer2([1, (8 + channel) << 4, 0])
         adc_level = ((r[1]&3) << 8) + r[2]
 
-    print("ADC Reading (%d) = %d, Volts = %f" % (channel, adc_level, reading_level_to_volts(adc_level)))
+##    print("ADC Reading (%d) = %d, Volts = %f" % (channel, adc_level, reading_level_to_volts(adc_level)))
     return adc_level
             
 
@@ -138,12 +141,29 @@ def selected_environment():
     else:
         return UNKNOWN_ENVIRONMENT
 
+def update_lcd():
+    global prev_machine_role
+    global prev_environment
+    machine_role = selected_machine_role()
+    environment = selected_environment()
+    
+    if (machine_role != prev_machine_role or
+        environment != prev_environment):
+        prev_machine_role = machine_role
+        prev_environment = environment
+        lcd.clear()
+        lcd.message("%s\n" % environment)
+        lcd.message("%s" % machine_role)
+
 def WaitForButtonStateChange():
     original_state = GPIO.input(button_pin)
     while True:        
         button_state = GPIO.input(button_pin)
         if (button_state != original_state):
             return button_state
+
+        update_lcd()
+        
         time.sleep(0.1)
 
 def GetRandomMachineName():
@@ -158,29 +178,30 @@ def DoStuff():
 
     print("Creating definition: " + definition_url)
     print("Request Body: " + request_body)
-    definition_response = requests.put(definition_url, request_body)
-    if (definition_response.status_code != 201):
-        message = "Could not create definition: {}".format(definition_response.text)
-        raise Exception(message)
-    print("Definition created.")
+##    definition_response = requests.put(definition_url, request_body)
+##    if (definition_response.status_code != 201):
+##        message = "Could not create definition: {}".format(definition_response.text)
+##        raise Exception(message)
+##    print("Definition created.")
+##
+##    print("Provisioning instance: ")
+##    instance_response = requests.put(instance_url, '')
+##    if instance_response.status_code != 202:
+##        message = "Could not provision instance."
+##        raise Exception(message)
+##
+##    print("Provisioning instance...")
+##    instance_status = "provision_pending"
+##    while instance_status in ["provision_pending", "provisioning"]:
+##        get_response = requests.get(instance_url)
+##        response_hash = get_response.json()
+##        instance_status = response_hash['status']
+##        print("  Status: {}".format(instance_status))
+##        time.sleep(5)
+##        
+##    print("Instance provisioned for {}.".format(machine_name))
 
-    print("Provisioning instance: ")
-    instance_response = requests.put(instance_url, '')
-    if instance_response.status_code != 202:
-        message = "Could not provision instance."
-        raise Exception(message)
-
-    print("Provisioning instance...")
-    instance_status = "provision_pending"
-    while instance_status in ["provision_pending", "provisioning"]:
-        get_response = requests.get(instance_url)
-        response_hash = get_response.json()
-        instance_status = response_hash['status']
-        print("  Status: {}".format(instance_status))
-        time.sleep(5)
-        
-    print("Instance provisioned for {}.".format(machine_name))
-
+update_lcd()
 
 try:
     print 'FAKE_MODE = ' + str(FAKE_MODE)

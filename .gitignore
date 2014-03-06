@@ -1,3 +1,5 @@
+proxy.sh
+
 *.py[cod]
 
 # C extensions

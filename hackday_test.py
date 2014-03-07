@@ -20,13 +20,13 @@ ADC_VREF = 3.3
 ADC_NUM_LEVELS = 1024
 MACHINE_ROLE_CHANNEL = 0
 ENVIRONMENT_CHANNEL = 1
-button_pin = 7
+button_pin = 4
 UNKNOWN_MACHINE_ROLE = 'unknown role'
 UNKNOWN_ENVRONMENT = 'unknown env'
 FAKE_MODE = os.getenv('FAKE_MODE') == 'true' or False
 
-prev_machine_role = ''
 prev_environment = ''
+prev_machine_role = ''
 
 class FakeLCD:
     def clear(self):
@@ -61,10 +61,9 @@ else:
 
   # LCD configuration
   lcd = Adafruit_CharLCD()
-  lcd.begin(16,1)
+  lcd.begin(16,2)
 
 # Set up GPIO
-GPIO.setmode(GPIO.BOARD)
 GPIO.setup(button_pin, GPIO.IN)
 
 # API machine roles that can be provisioned.
@@ -80,8 +79,7 @@ ENVIRONMENTS = list(reversed([ 'development',
                                'qa',
                                'uat',
                                'staging',
-                               'production',
-                               'infra_dev1' ]))
+                               'production' ]))
 
 # Spaces out the ADC reading range (10 bit ADC = 1024 levels)
 # into upper reading thresholds for the requested number of positions.
@@ -141,6 +139,12 @@ def selected_environment():
     else:
         return UNKNOWN_ENVIRONMENT
 
+def print_to_lcd(line1, line2):
+    lcd.setCursor(0, 0)
+    lcd.message(line1.ljust(16))
+    lcd.setCursor(0, 1)
+    lcd.message(line2.ljust(16))
+
 def update_lcd():
     global prev_machine_role
     global prev_environment
@@ -151,9 +155,7 @@ def update_lcd():
         environment != prev_environment):
         prev_machine_role = machine_role
         prev_environment = environment
-        lcd.clear()
-        lcd.message("%s\n" % environment)
-        lcd.message("%s" % machine_role)
+        print_to_lcd(environment, machine_role)
 
 def WaitForButtonStateChange():
     original_state = GPIO.input(button_pin)
@@ -201,11 +203,12 @@ def DoStuff():
 ##        
 ##    print("Instance provisioned for {}.".format(machine_name))
 
-update_lcd()
-
 try:
-    print 'FAKE_MODE = ' + str(FAKE_MODE)
-    
+##    print 'FAKE_MODE = ' + str(FAKE_MODE)
+    print_to_lcd(' Provisionator', '      3000')
+    time.sleep(10)
+    update_lcd()
+
     while True:
         button_state = WaitForButtonStateChange()
         if (button_state == 0):

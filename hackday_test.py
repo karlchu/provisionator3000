@@ -24,6 +24,7 @@ button_pin = 4
 UNKNOWN_MACHINE_ROLE = 'unknown role'
 UNKNOWN_ENVRONMENT = 'unknown env'
 FAKE_MODE = os.getenv('FAKE_MODE') == 'true' or False
+TEST_MODE = os.getenv('TEST_MODE') == 'true' or False
 
 prev_environment = ''
 prev_machine_role = ''
@@ -180,33 +181,37 @@ def DoStuff():
 
     print("Creating definition: " + definition_url)
     print("Request Body: " + request_body)
-##    definition_response = requests.put(definition_url, request_body)
-##    if (definition_response.status_code != 201):
-##        message = "Could not create definition: {}".format(definition_response.text)
-##        raise Exception(message)
-##    print("Definition created.")
-##
-##    print("Provisioning instance: ")
-##    instance_response = requests.put(instance_url, '')
-##    if instance_response.status_code != 202:
-##        message = "Could not provision instance."
-##        raise Exception(message)
-##
-##    print("Provisioning instance...")
-##    instance_status = "provision_pending"
-##    while instance_status in ["provision_pending", "provisioning"]:
-##        get_response = requests.get(instance_url)
-##        response_hash = get_response.json()
-##        instance_status = response_hash['status']
-##        print("  Status: {}".format(instance_status))
-##        time.sleep(5)
-##        
-##    print("Instance provisioned for {}.".format(machine_name))
+    if (TEST_MODE):
+        return    
+    definition_response = requests.put(definition_url, request_body)
+    if (definition_response.status_code != 201):
+        message = "Could not create definition: {}".format(definition_response.text)
+        raise Exception(message)
+    print("Definition created.")
+
+    print("Provisioning instance: ")
+    instance_response = requests.put(instance_url, '')
+    if instance_response.status_code != 202:
+        message = "Could not provision instance."
+        raise Exception(message)
+
+    print("Provisioning instance...")
+    instance_status = "provision_pending"
+    while instance_status in ["provision_pending", "provisioning"]:
+        get_response = requests.get(instance_url)
+        response_hash = get_response.json()
+        instance_status = response_hash['status']
+        print("  Status: {}".format(instance_status))
+        print_to_lcd(machine_name, instance_status)
+        time.sleep(5)
+
+    time.sleep(5)
+    print("Instance provisioned for {}.".format(machine_name))
 
 try:
 ##    print 'FAKE_MODE = ' + str(FAKE_MODE)
-    print_to_lcd(' Provisionator', '      3000')
-    time.sleep(10)
+    print_to_lcd(' Provisionator', '     3000')
+    time.sleep(5)
     update_lcd()
 
     while True:
@@ -222,12 +227,3 @@ finally:
         spi.close()
 
 print 'Done.'
-
-##        print "-------------------------------------------"
-##        machine_role = selected_machine_role()
-##        environment = selected_environment()
-##        lcd.clear()
-##        lcd.message("E: %s\n" % environment)
-##        lcd.message("R: %s" % machine_role)
-##        print "-------------------------------------------"
-##        time.sleep(2)
